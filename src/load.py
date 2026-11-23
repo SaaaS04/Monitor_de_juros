@@ -1,4 +1,5 @@
 import os
+from datetime import date
 from pathlib import Path
 
 import pandas as pd
@@ -30,20 +31,27 @@ def conectar():
     )
 
 
-def ler_processado():
-    arquivos = sorted(PASTA_PROCESSED.glob("taxas_*.parquet"))
-    if not arquivos:
-        raise FileNotFoundError(f"Nenhum Parquet em {PASTA_PROCESSED}. Rode a transformação antes.")
-    arquivo = arquivos[-1]
+def periodo_do_arquivo(arquivo):
+    return date.fromisoformat(arquivo.stem.removeprefix("taxas_"))
+
+
+def periodos_carregados(cur):
+    cur.execute("SELECT DISTINCT inicio_periodo FROM stg_tax")
+    return {linha[0] for linha in cur.fetchall()}
+
+
+def arquivos_pendentes(cur):
+    carregados = periodos_carregados(cur)
+    return [
+        arquivo
+        for arquivo in sorted(PASTA_PROCESSED.glob("taxas_*.parquet"))
+        if periodo_do_arquivo(arquivo) not in carregados
+    ]
+
+
+def ler_linhas(arquivo):
     df = pd.read_parquet(arquivo)
-    linhas = list(df[COLUNAS].astype(object).itertuples(index=False, name=None))
-    return arquivo, linhas
-
-
-def carregar_stg(cur, linhas):
-    cur.execute(ler_sql("create_stg_tax.sql"))
-    cur.executemany(ler_sql("insert_stg_tax.sql"), linhas)
-    return cur.rowcount
+    return list(df[COLUNAS].astype(object).itertuples(index=False, name=None))
 
 
 def atualizar_modelo(cur):
@@ -57,17 +65,24 @@ def contar(cur, tabela):
 
 
 def run():
-    arquivo, linhas = ler_processado()
-
     with conectar() as conexao:
         with conexao.cursor() as cur:
-            inseridas = carregar_stg(cur, linhas)
+            cur.execute(ler_sql("create_stg_tax.sql"))
+
+            pendentes = arquivos_pendentes(cur)
+            print(f"[load] {len(pendentes)} períodos para carregar")
+
+            sql_inserir = ler_sql("insert_stg_tax.sql")
+            for arquivo in pendentes:
+                linhas = ler_linhas(arquivo)
+                cur.executemany(sql_inserir, linhas)
+                print(f"[load] {arquivo.name}: {cur.rowcount} linhas")
+
             atualizar_modelo(cur)
             bancos = contar(cur, "dim_bank")
             tipos = contar(cur, "dim_credit_type")
             taxas = contar(cur, "fact_rate")
 
-    print(f"[load] {arquivo.name}: {len(linhas)} linhas lidas, {inseridas} novas na stg_tax")
     print(f"[load] Modelo: {bancos} bancos, {tipos} tipos de crédito, {taxas} taxas")
 
 

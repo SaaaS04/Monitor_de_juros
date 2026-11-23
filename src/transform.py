@@ -54,19 +54,24 @@ def salvar(df, arquivo):
     df.to_parquet(destino, index=False)
     return destino
 
+def arquivos_pendentes():
+    processados = {arquivo.stem for arquivo in PASTA_PROCESSED.glob("taxas_*.parquet")}
+    return [
+        arquivo
+        for arquivo in sorted(PASTA_RAW.glob("taxas_*.json"))
+        if arquivo.stem not in processados
+    ]
 
 def run():
-    arquivos = sorted(PASTA_RAW.glob("taxas_*.json"))
-    if not arquivos:
-        raise FileNotFoundError(f"Nenhum JSON em {PASTA_RAW}. Rode a extração antes.")
-    arquivo = arquivos[-1]
+    pendentes = arquivos_pendentes()
+    print(f"[transform] {len(pendentes)} arquivos para tratar")
 
-    df = ler_bruto(arquivo)
-    df = limpar(df)
-    validar(df)
-    destino = salvar(df, arquivo)
-    print(f"[transform] {len(df)} linhas salvas em {destino.name}")
-
+    for arquivo in pendentes:
+        df = ler_bruto(arquivo)
+        df = limpar(df)
+        validar(df)
+        destino = salvar(df, arquivo)
+        print(f"[transform] {destino.name}: {len(df)} linhas")
 
 if __name__ == "__main__":
     run()
