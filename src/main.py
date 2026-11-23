@@ -1,5 +1,5 @@
 import time
-
+import selic
 import extract
 import load
 import transform
@@ -7,7 +7,7 @@ import transform
 
 def run():
     inicio = time.perf_counter()
-
+    selic.run()
     extract.run()
     transform.run()
     load.run()
