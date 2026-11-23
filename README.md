@@ -1,6 +1,6 @@
 <div align="center">
 
-# 💸 Monitor de Juros dos Bancos
+# Monitor de Juros dos Bancos
 
 **Quanto cada banco do Brasil cobra para te emprestar dinheiro, e o que explica essa diferença? Este pipeline responde, com dados oficiais do Banco Central.**
 
