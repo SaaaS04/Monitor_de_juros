@@ -7,7 +7,7 @@ import requests
 
 URL = "https://olinda.bcb.gov.br/olinda/servico/taxaJuros/versao/v2/odata/TaxasJurosDiariaPorInicioPeriodo"
 LIMITE = 10000
-INICIO_HISTORICO = date(2026, 9, 1)
+INICIO_HISTORICO = date(2025, 1, 1)
 PASTA_RAW = Path(__file__).parent.parent / "data" / "raw"
 
 
