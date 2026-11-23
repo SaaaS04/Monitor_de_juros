@@ -8,7 +8,7 @@ import requests
 from load import conectar, ler_sql
 
 URL = "https://api.bcb.gov.br/dados/serie/bcdata.sgs.432/dados"
-INICIO = date(2025, 1, 1)
+INICIO = date(2024, 10, 1)
 ARQUIVO_RAW = Path(__file__).parent.parent / "data" / "raw" / "selic.json"
 
 
