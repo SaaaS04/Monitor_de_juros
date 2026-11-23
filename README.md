@@ -159,7 +159,7 @@ Essa combinação é única e serve de chave para impedir duplicação na carga.
 - **Granularidade:** cada taxa é a **média de um período** (início e fim)
 
 > [!IMPORTANT]
-> O Banco Central publica esses dados com algumas semanas de atraso. Rodar o pipeline em dias seguidos pode não trazer nenhum período novo, e isso é esperado.
+> Um período novo é publicado a cada dia útil, com cerca de três semanas de atraso. Cada taxa é a média de uma janela de 5 dias úteis, e as janelas se sobrepõem: o período que começa em 29/10 e o que começa em 30/10 compartilham quase todos os dias. Para análises ao longo do tempo, use um período por semana ou por mês.
 
 ## 🚀 Como rodar
 

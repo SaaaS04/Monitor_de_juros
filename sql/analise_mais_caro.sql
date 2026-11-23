@@ -8,6 +8,7 @@ WITH ranking AS (
     FROM fact_rate AS f
     JOIN dim_bank AS b ON b.cnpj8 = f.cnpj8
     JOIN dim_credit_type AS c ON c.credit_type_id = f.credit_type_id
+    WHERE f.inicio_periodo = (SELECT MAX(inicio_periodo) FROM fact_rate)
 )
 SELECT segmento, modalidade, banco, taxa_mes
 FROM ranking
