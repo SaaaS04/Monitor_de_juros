@@ -14,15 +14,20 @@ COLUNAS = [
     "banco", "cnpj8", "taxa_mes", "taxa_ano",
 ]
 
+
+def ler_sql(nome):
+    return (PASTA_SQL / nome).read_text(encoding="utf-8")
+
+
 load_dotenv()
 
-arquivo = sorted(PASTA_PROCESSED.glob("taxas_*.parquet"))[-1]
+arquivos = sorted(PASTA_PROCESSED.glob("taxas_*.parquet"))
+if not arquivos:
+    raise FileNotFoundError(f"Nenhum Parquet em {PASTA_PROCESSED}. Rode a transformação antes.")
+arquivo = arquivos[-1]
+
 df = pd.read_parquet(arquivo)
-
 linhas = list(df[COLUNAS].astype(object).itertuples(index=False, name=None))
-
-sql_criar = (PASTA_SQL / "create_stg_tax.sql").read_text(encoding="utf-8")
-sql_inserir = (PASTA_SQL / "insert_stg_tax.sql").read_text(encoding="utf-8")
 
 conexao = psycopg.connect(
     host="localhost",
@@ -33,11 +38,22 @@ conexao = psycopg.connect(
 )
 
 with conexao.cursor() as cur:
-    cur.execute(sql_criar)
-    cur.executemany(sql_inserir, linhas)
+    cur.execute(ler_sql("create_stg_tax.sql"))
+    cur.executemany(ler_sql("insert_stg_tax.sql"), linhas)
     inseridas = cur.rowcount
+
+    cur.execute(ler_sql("create_model.sql"))
+    cur.execute(ler_sql("populate_model.sql"))
+
+    cur.execute("SELECT COUNT(*) FROM dim_bank")
+    bancos = cur.fetchone()[0]
+    cur.execute("SELECT COUNT(*) FROM dim_credit_type")
+    tipos = cur.fetchone()[0]
+    cur.execute("SELECT COUNT(*) FROM fact_rate")
+    taxas = cur.fetchone()[0]
 
 conexao.commit()
 conexao.close()
 
-print(f"{arquivo.name}: {len(linhas)} linhas lidas, {inseridas} inseridas, {len(linhas) - inseridas} já existiam")
+print(f"{arquivo.name}: {len(linhas)} linhas lidas, {inseridas} novas na stg_tax")
+print(f"Modelo: {bancos} bancos, {tipos} tipos de crédito, {taxas} taxas")
