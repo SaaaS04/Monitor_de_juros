@@ -57,6 +57,7 @@ def ler_linhas(arquivo):
 def atualizar_modelo(cur):
     cur.execute(ler_sql("create_model.sql"))
     cur.execute(ler_sql("populate_model.sql"))
+    cur.execute(ler_sql("seed_bank_group.sql"))
 
 
 def contar(cur, tabela):
