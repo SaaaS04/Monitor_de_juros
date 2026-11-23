@@ -5,7 +5,9 @@ CREATE TABLE IF NOT EXISTS ref_bank_group (
 
 DELETE FROM ref_bank_group;
 
-INSERT INTO ref_bank_group (cnpj8, grupo) VALUES
+INSERT INTO ref_bank_group (cnpj8, grupo)
+SELECT v.cnpj8, v.grupo
+FROM (VALUES
     ('00416968', 'digital'),
     ('31872495', 'digital'),
     ('61348538', 'digital'),
@@ -18,4 +20,8 @@ INSERT INTO ref_bank_group (cnpj8, grupo) VALUES
     ('60872504', 'tradicional'),
     ('60746948', 'tradicional'),
     ('07207996', 'tradicional'),
-    ('90400888', 'tradicional');
+    ('90400888', 'tradicional')
+) AS v (cnpj8, grupo)
+WHERE EXISTS (
+    SELECT 1 FROM dim_bank AS b WHERE b.cnpj8 = v.cnpj8
+);
